@@ -1,0 +1,21 @@
+{
+  "name": "blender_farm",
+  "version": "0.0.1",
+  "description": "A nodeJS Blender farm",
+  "main": "src/main.js",
+  "repository": "https://github.com/ScottishCyclops/blender_farm",
+  "author": "ScottishCyclops <scottlandart@gmail.com>",
+  "license": "MIT",
+  "scripts": {
+    "start": "node src/main.js",
+    "genkeys": "openssl req -config ssl/blender.local.conf -new -sha256 -newkey rsa:2048 -nodes -keyout ssl/blender.local.key -x509 -days 365 -out ssl/blender.local.crt"
+  },
+  "dependencies": {
+    "body-parser": "^1.18.3",
+    "bufferutil": "^4.0.0",
+    "express": "^4.16.4",
+    "fast-text-encoding": "^1.0.0",
+    "helmet": "^3.15.0",
+    "utf-8-validate": "^5.0.1"
+  }
+}
