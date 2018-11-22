@@ -26,7 +26,7 @@ const getDataScriptPrefix = 'render_farm_data='
 /**
  * Regular expression to parse the blender output when rendering
  */
-const reg = new RegExp(/^Fra:(?<frame>\d+) Mem:(?<memory_global>\d+(.\d+)?)M \(.+\) \| Time:(?<render_time>\d{2}:\d{2}\.\d{2}) \|( Remaining:(?<remaining_time>\d{2}:\d{2}\.\d{2}) \|)? Mem:(?<memory_current>\d+\.\d{2})M, Peak:(?<memory_current_peak>\d+\.\d{2})M \| (?<scene>[^\|]+), (?<render_layer>[^\|]+) \| (?<information>[^\|]+)( \| (?<extra_information>.+))?$/)
+const blenderLineRegExp = new RegExp(/^Fra:(?<frame>\d+) Mem:(?<memory_global>\d+(.\d+)?)M \(.+\) \| Time:(?<render_time>\d{2}:\d{2}\.\d{2}) \|( Remaining:(?<remaining_time>\d{2}:\d{2}\.\d{2}) \|)? Mem:(?<memory_current>\d+\.\d{2})M, Peak:(?<memory_current_peak>\d+\.\d{2})M \| (?<scene>[^\|]+), (?<render_layer>[^\|]+) \| (?<information>[^\|]+)( \| (?<extra_information>.+))?$/)
 
 /**
  * Turn a blender time string 00:00.00 into a number of milliseconds
@@ -49,7 +49,7 @@ function parseBlenderTime(timeString)
  */
 function parseBlenderOutputLine(line)
 {
-    const output = reg.exec(line)
+    const output = blenderLineRegExp.exec(line)
     if (output === null) return null
 
     return {
@@ -75,7 +75,6 @@ function parseBlenderOutputLine(line)
  */
 function getDevices()
 {
-  log('executing blender for devices')
   const child = spawnSync(config.blenderExec, [ '-b', '-P', getDevicesScript ])
 
   const lines = child.stdout.toString().split('\n')
@@ -84,7 +83,6 @@ function getDevices()
     if (!line.startsWith(getDataScriptPrefix)) continue
 
     const json = JSON.parse(line.split(getDataScriptPrefix)[1])
-    log('devices done')
     return json
   }
 
@@ -103,7 +101,6 @@ function getData(blendFile)
 {
   return new Promise((resolve, reject) =>
   {
-    log('executing blender for data')
     const child = spawn(config.blenderExec, [ '-b', blendFile, '-P', getDataScript ])
 
     child.stdout.on('data', data =>
@@ -115,7 +112,6 @@ function getData(blendFile)
 
         const json = JSON.parse(line.split(getDataScriptPrefix)[1])
         child.kill()
-        log('data done')
         return resolve(json)
       }
 
@@ -146,8 +142,6 @@ function render(blendFile, params, onprogress)
 {
   return new Promise((resolve, reject) =>
   {
-    log('executing blender for render')
-
     const child = spawn(config.blenderExec, [ '-b', blendFile, '-P', renderScript, '--', JSON.stringify(params) ])
 
     child.stdout.on('data', data =>
@@ -165,7 +159,6 @@ function render(blendFile, params, onprogress)
 
     child.on('close', (code, signal) =>
     {
-      log('render done')
       if (code !== 0) return reject(signal)
       return resolve()
     })
