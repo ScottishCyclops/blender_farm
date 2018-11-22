@@ -1,6 +1,12 @@
+/**
+ * @type {{frame: number, memory_global: number, render_time: number, remaining_time?: number, memory_current: number, memory_current_peak: number, scene: string, render_layer: string, information: string, extra_information?: string}}
+ */
+const blenderOutput = null
+
 const consts = require('./consts')
 const { existsSync } = require('fs')
 const { spawn } = require('child_process')
+const moment = require('moment')
 /**
  * @type {{blenderExec: string}}
  */
@@ -15,6 +21,50 @@ const getDataScript = consts.ROOT_DIR + '/python/get_data.py'
 const renderScript = consts.ROOT_DIR + '/python/render.py'
 
 const getDataScriptPrefix = 'render_farm_data='
+
+/**
+ * Regular expression to parse the blender output when rendering
+ */
+const reg = new RegExp(/^Fra:(?<frame>\d+) Mem:(?<memory_global>\d+(.\d+)?)M \(.+\) \| Time:(?<render_time>\d{2}:\d{2}\.\d{2}) \|( Remaining:(?<remaining_time>\d{2}:\d{2}\.\d{2}) \|)? Mem:(?<memory_current>\d+\.\d{2})M, Peak:(?<memory_current_peak>\d+\.\d{2})M \| (?<scene>[^\|]+), (?<render_layer>[^\|]+) \| (?<information>[^\|]+)( \| (?<extra_information>.+))?$/)
+
+/**
+ * Turn a blender time string 00:00.00 into a number of milliseconds
+ *
+ * @param {string} timeString the time string
+ * @returns {number} the number of milliseconds
+ * @pure
+ */
+function parseBlenderTime(timeString)
+{
+  return moment.duration(`00:${timeString}`).asMilliseconds()
+}
+
+
+/**
+ * Parse a single blender output line for relevent render data into JSON
+ * @param {string} line the stripped blender output line
+ * @returns {null | typeof blenderOutput} the blender render data as JSON or null if the line didn't contain render data
+ * @pure
+ */
+function parseBlenderOutputLine(line)
+{
+    const output = reg.exec(line)
+    if (output === null) return null
+
+    return {
+      frame: parseInt(output.groups.frame),
+      memory_global: parseFloat(output.groups.memory_global),
+      render_time: parseBlenderTime(output.groups.render_time),
+      remaining_time: output.groups.remaining_time === undefined ? undefined : parseBlenderTime(output.groups.remaining_time),
+      memory_current: parseFloat(output.groups.memory_current),
+      memory_current_peak: parseFloat(output.groups.memory_current_peak),
+      scene: output.groups.scene,
+      render_layer: output.groups.render_layer,
+      information: output.groups.information,
+      extra_information: output.groups.extra_information
+    }
+}
+
 
 /**
  * Get data about the blend file
@@ -53,7 +103,7 @@ function getData(blendFile)
  * @param {string} blendFile path to the blend file to render
  * @param {'still' | 'animation'} type the type of render to performe
  * @param {string} outputFolder path to the folder in which to write the frames
- * @param {(progress: {frame: number}) => void} onprogress a callback executed when the blend file yields progress
+ * @param {(progress: {frame: typeof blenderOutput}) => void} onprogress a callback executed when the blend file yields progress
  * @returns {Promise<void>} nothing
  * @unpure
  */
@@ -73,7 +123,13 @@ function render(blendFile, type, outputFolder, onprogress)
 
     child.stdout.on('data', data =>
     {
-      onprogress(data.toString())
+      const lines = data.toString().split('\n').filter(Boolean)
+
+      lines.forEach(line =>
+      {
+        const output = parseBlenderOutputLine(line)
+        if (output !== null) onprogress(output)
+      })
     })
 
     child.on('error', reject)

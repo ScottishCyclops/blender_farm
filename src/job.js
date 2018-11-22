@@ -19,7 +19,7 @@ function getId(blendFile, t)
 }
 
 /**
- * @type {{status: 'pending' | 'rendering' | 'done', name: string, id: string, type: 'still' | 'animation', blendFile: string}}
+ * @type {{status: string, name: string, id: string, type: 'still' | 'animation', blendFile: string}}
  */
 const jobType = null
 
@@ -56,7 +56,7 @@ async function startNewJob(name, blendFile, type)
   const job = {
     id,
     name,
-    status: 'pending',
+    status: 'Pending',
     type,
     blendFile
   }
@@ -69,9 +69,8 @@ async function startNewJob(name, blendFile, type)
   await render(job.blendFile, job.type, outputFolder, status =>
   {
     job.status = status
+    console.log(job.status)
   })
-
-  job.status = 'done'
 }
 
 module.exports = {
