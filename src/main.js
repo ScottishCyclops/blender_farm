@@ -1,23 +1,20 @@
-const cluster = require('cluster')
-const numCores = require('os').cpus().length
+const { readFileSync, existsSync } = require('fs')
+const makeExpressServer = require('./server')
+const consts = require('./consts')
+const { log, assert } = require('./utils')
 
 /**
  * Application entry point for worker threads
  *
- * @returns {Promise<never>} never
+ * @returns {never} never
  * @unpure
  */
 const main = () =>
 {
-  const makeExpressServer = require('./server')
-  const consts = require('./consts')
-  const { readFileSync, existsSync } = require('fs')
   /**
    * @type {{port: number, certPath: string, keyPath: string}}
    */
   const config = require(consts.ROOT_DIR + '/config.json')
-
-  const { log, assert } = require('./utils')
 
   assert(config.hasOwnProperty('port'),     1, 'Invalid config file: missing "port"')
   assert(config.hasOwnProperty('certPath'), 1, 'Invalid config file: missing "certPath"')
@@ -41,11 +38,4 @@ const main = () =>
   })
 }
 
-if (cluster.isMaster) {
-  // make as many forks as they are cores
-  new Array(numCores)
-    .fill(null)
-    .map(() => cluster.fork())
-} else {
-  main()
-}
+main()
