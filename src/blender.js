@@ -5,7 +5,7 @@ const blenderOutput = null
 
 const consts = require('./consts')
 const { existsSync } = require('fs')
-const { spawn } = require('child_process')
+const { spawn, spawnSync } = require('child_process')
 const moment = require('moment')
 /**
  * @type {{blenderExec: string}}
@@ -19,6 +19,7 @@ assert(existsSync(config.blenderExec), 2, `"${config.blenderExec}" does not exis
 
 const getDataScript = consts.ROOT_DIR + '/python/get_data.py'
 const renderScript = consts.ROOT_DIR + '/python/render.py'
+const getDevicesScript = consts.ROOT_DIR + '/python/get_devices.py'
 
 const getDataScriptPrefix = 'render_farm_data='
 
@@ -67,6 +68,31 @@ function parseBlenderOutputLine(line)
 
 
 /**
+ * Get the number of devices present on the system for blender render in sync
+ *
+ * @returns {number} the number of devices
+ * @unpure
+ */
+function getDevices()
+{
+  log('executing blender for devices')
+  const child = spawnSync(config.blenderExec, [ '-b', '-P', getDevicesScript ])
+
+  const lines = child.stdout.toString().split('\n')
+
+  for (const line of lines) {
+    if (!line.startsWith(getDataScriptPrefix)) continue
+
+    const json = JSON.parse(line.split(getDataScriptPrefix)[1])
+    log('devices done')
+    return json
+  }
+
+  throw 'invalid stdout'
+}
+
+
+/**
  * Get data about the blend file
  *
  * @param {string} blendFile path to the blend file to retrieve data from
@@ -89,8 +115,11 @@ function getData(blendFile)
 
         const json = JSON.parse(line.split(getDataScriptPrefix)[1])
         child.kill()
+        log('data done')
         return resolve(json)
       }
+
+      return reject('invalid stdout')
     })
 
     child.on('error', reject)
@@ -101,23 +130,23 @@ function getData(blendFile)
  * Render the given blend file
  *
  * @param {string} blendFile path to the blend file to render
- * @param {'still' | 'animation'} type the type of render to performe
- * @param {string} outputFolder path to the folder in which to write the frames
+ * @param {{type: 'still' | 'animation', devices: number[], outputFolder: string}} params the parameters to pass to blender
+ *
+ * type: the type of render to performe
+ *
+ * devices: the Cycles device ids to use
+ *
+ * outputFolder:  path to the folder in which to write the frames
+ *
  * @param {(progress: {frame: typeof blenderOutput}) => void} onprogress a callback executed when the blend file yields progress
  * @returns {Promise<void>} nothing
  * @unpure
  */
-function render(blendFile, type, outputFolder, onprogress)
+function render(blendFile, params, onprogress)
 {
   return new Promise((resolve, reject) =>
   {
     log('executing blender for render')
-
-    const params = {
-      type,
-      devices: [ 0 ],
-      outputFolder,
-    }
 
     const child = spawn(config.blenderExec, [ '-b', blendFile, '-P', renderScript, '--', JSON.stringify(params) ])
 
@@ -145,5 +174,7 @@ function render(blendFile, type, outputFolder, onprogress)
 
 module.exports = {
   getData,
+  getDevices,
   render,
+  blenderOutput,
 }
