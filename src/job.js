@@ -1,4 +1,4 @@
-const { getData, getDevices, render, blenderOutput } = require('./blender')
+const { getData, getDevices, render, blenderOutput, parseBlenderOutputLine } = require('./blender')
 const crypto = require('crypto')
 const consts = require('./consts')
 const { log, err } = require('./utils')
@@ -19,7 +19,7 @@ function getId(blendFile, t)
 }
 
 /**
- * @type {{status: typeof blenderOutput, name: string, id: string, type: 'still' | 'animation', blendFile: string, data: {startFrane: number, endFrame: number}}}
+ * @type {{status: string, nodes: { [x:string]: typeof blenderOutput }, name: string, id: string, type: 'still' | 'animation', blendFile: string, data: {startFrane: number, endFrame: number}}}
  */
 const jobType = null
 
@@ -28,14 +28,18 @@ const jobType = null
  */
 const deviceType = null
 
-const errors = {
-  INVALID_ID: 0,
-}
-
 /**
  * @type {{[x: string]: typeof jobType}}
  */
 const jobsList = {
+}
+
+/**
+ * List of all running nodes indexed by PID
+ * @type {{[x: string]: ChildProcess}}
+ */
+const nodesList = {
+
 }
 
 
@@ -59,20 +63,6 @@ for (let id = 0; id < numDevices; ++id) {
 const outputFolder = job => `${consts.ROOT_DIR}/public/${job.name}_${job.id}`
 
 /**
- * Get the status of the given job by id
- *
- * @param {string} id the id of the job to check
- * @returns {typeof jobType}
- * @throws if the job id is invalid
- */
-function getJobStatus(id)
-{
-  if (jobsList.hasOwnProperty(id)) return jobsList[id]
-
-  throw errors.INVALID_ID
-}
-
-/**
  * Starts a node for the given job with the given devices
  *
  * @param {typeof jobType} job the job object
@@ -80,16 +70,44 @@ function getJobStatus(id)
  * @returns {Promise<void>} nothing
  * @unpure
  */
-async function startJobNode(job, devices)
+function startJobNode(job, devices)
 {
-  log(`starting job node for "${job.name}"`)
-  await render(job.blendFile, { type: job.type, devices, outputFolder: outputFolder(job) }, status =>
+  return new Promise((resolve, reject) =>
   {
-    // TODO: handle different nodes status and don't overwrite
-    job.status = status
-    // console.log(job.status.information, job.status.extra_information || '')
+    log(`starting job node for "${job.name}"`)
+    const child = render(job.blendFile, { type: job.type, devices, outputFolder: outputFolder(job) })
+
+    // save the child to be able to cancel the render
+    const pid = child.pid
+    nodesList[pid] = child
+
+    const onprogress = status =>
+    {
+      job.nodes[pid] = status
+    }
+
+    child.stdout.on('data', data =>
+    {
+      const lines = data.toString().split('\n').filter(Boolean)
+
+      lines.forEach(line =>
+      {
+        const output = parseBlenderOutputLine(line)
+        if (output !== null) onprogress(output)
+      })
+    })
+
+    child.on('error', reject)
+
+    child.on('close', (code, signal) =>
+    {
+      // ignore SIGTERM, because it means the job got canceled
+      if (code !== 0 && signal !== 'SIGTERM') return reject(signal)
+      log(`finished job node for "${job.name}"`)
+      delete nodesList[pid]
+      return resolve()
+    })
   })
-  log(`finished job node for "${job.name}"`)
 }
 
 /**
@@ -99,6 +117,8 @@ async function startJobNode(job, devices)
 async function doJobAsync(job)
 {
   log(`starting job "${job.name}"`)
+
+  job.status = 'Gathering data'
   job.data = await getData(job.blendFile)
 
   const availableDevices = Object.values(devicesList).filter(x => !x.busy)
@@ -106,6 +126,7 @@ async function doJobAsync(job)
 
   const numFrames = job.data.endFrame - job.data.startFrane + 1
 
+  job.status = 'Rendering'
   if(job.type === 'animation' && availableDevices.length >= numFrames) {
     // if it is an animation and there are as much or more available devices than frames to render it is always faster to render multiple frames at a time
     // -> spawn multiple, nodes each with one device
@@ -119,9 +140,12 @@ async function doJobAsync(job)
   } else {
     // if it is a still or an animation with less frames than devices, it is always faster to render with multiple devices
     // -> spawn a single node with all the available devices
-      await startJobNode(job, availableDevices.map(device => device.id))
-      availableDevices.forEach(device => device.busy = false)
+    await startJobNode(job, availableDevices.map(device => device.id))
+    availableDevices.forEach(device => device.busy = false)
   }
+
+  // don't overwrite the "canceled" state
+  if (job.status !== 'Canceled') job.status = 'Finished'
 
   log(`finished job "${job.name}"`)
 }
@@ -141,29 +165,39 @@ function startNewJob(name, blendFile, type)
   const job = {
     id,
     name,
-    status: {
-      frame: 0,
-      memory_global: 0,
-      render_time: 0,
-      memory_current: 0,
-      memory_current_peak: 0,
-      scene: 'Unknown',
-      render_layer: 'Unknown',
-      information: 'Pending'
-    },
-    data: { startFrame: 0, endFrame: 0 },
+    status: 'Pending',
+    nodes: {},
     type,
-    blendFile
+    blendFile,
+    data: { startFrame: 0, endFrame: 0 },
   }
 
   jobsList[id] = job
 
-  doJobAsync(job).catch(err)
+  doJobAsync(job).catch(e => err('Rendering error:', e))
   return id
 }
 
+/**
+ * Kill all nodes associated with a job
+ *
+ * @param {typeof jobType} job the job to cancel
+ * @returns {string} a message saying what happened
+ */
+function cancelJob(job)
+{
+  if (job.status !== 'Rendering') return `Cannot be canceled. Job is currently ${job.status}`
+  job.status = 'Canceled'
+
+  for (const pid in job.nodes) {
+    nodesList[pid].kill()
+  }
+
+  return 'Canceled'
+}
+
 module.exports = {
-  getJobStatus,
-  errors,
+  jobsList,
   startNewJob,
+  cancelJob,
 }

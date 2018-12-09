@@ -49,21 +49,21 @@ function parseBlenderTime(timeString)
  */
 function parseBlenderOutputLine(line)
 {
-    const output = blenderLineRegExp.exec(line)
-    if (output === null) return null
+  const output = blenderLineRegExp.exec(line)
+  if (output === null) return null
 
-    return {
-      frame: parseInt(output.groups.frame),
-      memory_global: parseFloat(output.groups.memory_global),
-      render_time: parseBlenderTime(output.groups.render_time),
-      remaining_time: output.groups.remaining_time === undefined ? undefined : parseBlenderTime(output.groups.remaining_time),
-      memory_current: parseFloat(output.groups.memory_current),
-      memory_current_peak: parseFloat(output.groups.memory_current_peak),
-      scene: output.groups.scene,
-      render_layer: output.groups.render_layer,
-      information: output.groups.information,
-      extra_information: output.groups.extra_information
-    }
+  return {
+    frame: parseInt(output.groups.frame),
+    memory_global: parseFloat(output.groups.memory_global),
+    render_time: parseBlenderTime(output.groups.render_time),
+    remaining_time: output.groups.remaining_time === undefined ? undefined : parseBlenderTime(output.groups.remaining_time),
+    memory_current: parseFloat(output.groups.memory_current),
+    memory_current_peak: parseFloat(output.groups.memory_current_peak),
+    scene: output.groups.scene,
+    render_layer: output.groups.render_layer,
+    information: output.groups.information,
+    extra_information: output.groups.extra_information
+  }
 }
 
 
@@ -134,35 +134,13 @@ function getData(blendFile)
  *
  * outputFolder:  path to the folder in which to write the frames
  *
- * @param {(progress: {frame: typeof blenderOutput}) => void} onprogress a callback executed when the blend file yields progress
- * @returns {Promise<void>} nothing
+ * @returns {ChildProcess} the blender child process
  * @unpure
  */
-function render(blendFile, params, onprogress)
+function render(blendFile, params)
 {
-  return new Promise((resolve, reject) =>
-  {
-    const child = spawn(config.blenderExec, [ '-b', blendFile, '-P', renderScript, '--', JSON.stringify(params) ])
-
-    child.stdout.on('data', data =>
-    {
-      const lines = data.toString().split('\n').filter(Boolean)
-
-      lines.forEach(line =>
-      {
-        const output = parseBlenderOutputLine(line)
-        if (output !== null) onprogress(output)
-      })
-    })
-
-    child.on('error', reject)
-
-    child.on('close', (code, signal) =>
-    {
-      if (code !== 0) return reject(signal)
-      return resolve()
-    })
-  })
+  const child = spawn(config.blenderExec, [ '-b', blendFile, '-P', renderScript, '--', JSON.stringify(params) ])
+  return child
 }
 
 module.exports = {
@@ -170,4 +148,5 @@ module.exports = {
   getDevices,
   render,
   blenderOutput,
+  parseBlenderOutputLine
 }
