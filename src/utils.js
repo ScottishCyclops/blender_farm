@@ -1,3 +1,5 @@
+const crypto = require('crypto')
+
 function log(...args)
 {
   console.log(...args)
@@ -28,9 +30,24 @@ function assert(x, code, ...error)
   process.exit(code)
 }
 
+/**
+ * Get the MD5 hash of the given strings
+ *
+ * @param {...string} strings a list of stringd
+ * @returns {string} an hexadecimal hash string
+ * @pure
+ */
+function md5Hash(...strings)
+{
+  const md5sum = crypto.createHash('md5')
+  md5sum.update(strings.join(''))
+  return md5sum.digest('hex')
+}
+
 module.exports = {
   log,
   warn,
   err,
-  assert
+  assert,
+  md5Hash
 }

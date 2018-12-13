@@ -1,22 +1,6 @@
 const { getData, getDevices, render, blenderOutput, parseBlenderOutputLine } = require('./blender')
-const crypto = require('crypto')
 const consts = require('./consts')
-const { log, err } = require('./utils')
-
-/**
- * Get a unique ID by hashing the file name and the current time
- *
- * @param {string} blendFile the file name
- * @param {number} t the current time in ms
- * @returns {string} an pseudo-unique hexadecimal string
- * @pure
- */
-function getId(blendFile, t)
-{
-  const md5sum = crypto.createHash('md5')
-  md5sum.update(blendFile + t)
-  return md5sum.digest('hex')
-}
+const { log, err, md5Hash } = require('./utils')
 
 /**
  * @type {{status: string, nodes: { [x:string]: typeof blenderOutput }, name: string, id: string, type: 'still' | 'animation', blendFile: string, data: {startFrane: number, endFrame: number}}}
@@ -158,7 +142,7 @@ async function doJobAsync(job)
  */
 function startNewJob(name, blendFile, type)
 {
-  const id = getId(blendFile, Date.now())
+  const id = md5Hash(blendFile, Date.now())
   /**
    * @type {typeof jobType}
    */

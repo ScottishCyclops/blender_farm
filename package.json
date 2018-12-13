@@ -1,7 +1,7 @@
 {
   "name": "blender_farm",
   "version": "0.0.1",
-  "description": "A nodeJS Blender farm",
+  "description": "A fully fledged remote blender farm written in NodeJS",
   "main": "src/main.js",
   "repository": "https://github.com/ScottishCyclops/blender_farm",
   "author": "ScottishCyclops <scottlandart@gmail.com>",

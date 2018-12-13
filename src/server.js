@@ -76,12 +76,34 @@ const makeExpressServer = credentials =>
     return res.json({ id })
   })
 
-  /*
-  app.post('/still', (req, res) =>
+
+  app.post('/render', (req, res) =>
   {
-    // req.body
+    // NAME
+    // field exists
+    if (!req.body.hasOwnProperty('name')) return res.status(400).json({ err: 'Bad Request. Missing parameter "name".' })
+    // name matches the regexp
+    if (!req.body.name.match(nameRegexp)) return res.status(400).json({ err: 'Bad Request. Invalid "name". Can contain: "a-z", "A-Z", "0-9", "_", or "-".' })
+
+    // BLENDFILE
+    // field exists
+    if (!req.body.hasOwnProperty('blendFile')) return res.status(400).json({ err: 'Bad Request. Missing parameter "blendFile".' })
+
+    const path = `${consts.ROOT_DIR}/public${req.query.blendFile}`
+    // path is absolute and leading to a potential blend file
+    if (!req.query.blendFile.startsWith('/') || !req.query.blendFile.endsWith('.blend') || path.indexOf('..') !== -1) return res.status(400).json({ err: 'Bad Request. Invalid "blendFile". Must be an absolute path starting with "/" and ending with ".blend"' })
+    // path exists and is a file
+    if (!existsSync(path) || !statSync(path).isFile()) return res.status(400).json({ err: 'Bad Request. Invalid "blendFile". File does not exist' })
+
+    // TYPE
+    // field exists
+    if (!req.query.hasOwnProperty('type')) return res.status(400).json({ err: 'Bad Request. Missing parameter "type".' })
+    // type is still or animation
+    if (req.query.type !== 'still' && req.query.type !== 'animation') return res.status(400).json({ err: 'Bad Request. Invalid "type". Must be either "still" or "animation".' })
+
+    const id = startNewJob(req.query.name, normalize(path), req.query.type)
+    return res.json({ id })
   })
-  */
 
   // TODO: socket for realtime info
 

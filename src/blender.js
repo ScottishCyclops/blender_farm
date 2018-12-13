@@ -12,7 +12,7 @@ const moment = require('moment')
  */
 const config = require(consts.ROOT_DIR + '/config.json')
 
-const { log, assert } = require('./utils')
+const { assert } = require('./utils')
 
 assert(config.hasOwnProperty('blenderExec'), 1, 'Invalid config file: missing "blenderExec"')
 assert(existsSync(config.blenderExec), 2, `"${config.blenderExec}" does not exist`)
@@ -40,7 +40,6 @@ function parseBlenderTime(timeString)
   return moment.duration(`00:${timeString}`).asMilliseconds()
 }
 
-
 /**
  * Parse a single blender output line for relevent render data into JSON
  * @param {string} line the stripped blender output line
@@ -66,7 +65,6 @@ function parseBlenderOutputLine(line)
   }
 }
 
-
 /**
  * Get the number of devices present on the system for blender render in sync
  *
@@ -88,7 +86,6 @@ function getDevices()
 
   throw 'invalid stdout'
 }
-
 
 /**
  * Get data about the blend file
@@ -139,8 +136,7 @@ function getData(blendFile)
  */
 function render(blendFile, params)
 {
-  const child = spawn(config.blenderExec, [ '-b', blendFile, '-P', renderScript, '--', JSON.stringify(params) ])
-  return child
+  return spawn(config.blenderExec, [ '-b', blendFile, '-P', renderScript, '--', JSON.stringify(params) ])
 }
 
 module.exports = {
