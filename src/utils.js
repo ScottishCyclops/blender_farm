@@ -26,7 +26,7 @@ function warn(...args)
 }
 
 /**
- * Output a list of strings as an error to the stderr
+ * Output a list of strings as an error to the stdout
  *
  * @param  {...string} args the strings to output
  * @returns {void} nothing
@@ -34,7 +34,7 @@ function warn(...args)
  */
 function err(...args)
 {
-  process.stderr.write(`[x] ${args.join(' ')}`)
+  process.stdout.write(`[x] ${args.join(' ')}`)
 }
 
 /**

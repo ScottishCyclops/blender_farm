@@ -28,7 +28,7 @@ const main = () =>
     key:  readFileSync(consts.ROOT_DIR + config.keyPath, consts.CODING)
   }
 
-  const { server, app } = makeExpressServer(credentials)
+  const { server } = makeExpressServer(credentials)
 
   const HOST = '0.0.0.0'
 
