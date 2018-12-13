@@ -1,5 +1,5 @@
 const { getData, getDevices, render, parseBlenderOutputLine } = require('./blender')
-const { jobType, deviceType } = require('./types')
+const { jobType, deviceType, renderNodeType } = require('./types')
 const consts = require('./consts')
 const { log, err, md5Hash } = require('./utils')
 
@@ -49,6 +49,19 @@ const jobsList = {}
  * @type {{[x: string]: ChildProcess}}
  */
 const nodesList = {}
+
+
+/**
+ * @type {typeof renderNodeType[]}
+ */
+/*const renderNodes = new Array(numDevices).fill(null).map(id =>
+{
+  return {
+    id,
+    jobList: {}
+  }
+})*/
+
 
 /**
  * Starts a node for the given job with the given devices
