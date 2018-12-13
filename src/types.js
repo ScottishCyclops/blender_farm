@@ -3,6 +3,19 @@
  */
 const blenderOutputType = null
 
+/**
+ * @type {{status: string, nodes: {[x:string]: typeof blenderOutputType}, name: string, id: string, type: 'still' | 'animation', blendFile: string, data: {startFrane: number, endFrame: number}}}
+ */
+const jobType = null
+
+/**
+ * @type {{id: number, busy: boolean}}
+ */
+const deviceType = null
+
+
 module.exports = {
-  blenderOutputType
+  blenderOutputType,
+  jobType,
+  deviceType
 }
