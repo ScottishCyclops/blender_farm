@@ -10,6 +10,11 @@ Please [email me](https://github.com/ScottishCyclops) if you have questions. For
 
 ## Installing the project
 
+Quick procedure to install the project on any Unix system.
+
+Recommanded OS: Any Ubuntu-based distrubution, 18.04 and above.
+You will need a graphical interface in order for Blender to accept rendering, even if the server then runs headless.
+
 ### Install the latest Node and Yarn releases
 
 ```bash
@@ -47,6 +52,8 @@ Under *blenderExec*, write the actual path to your blender executable. The rest 
 ```
 
 Generate a self-signed certificate. Press Enter until the end, no need to input anything.
+
+You will need the *openssl* command line utility (installed by default on most Linux platforms).
 
 ```bash
 yarn genkeys
