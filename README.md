@@ -54,10 +54,11 @@ yarn genkeys
 
 ### Start it
 
-Start the project !
-
 ```bash
 yarn start
 ```
+
+
+Hope you have fun with it !
 
 Scott
