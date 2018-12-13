@@ -35,7 +35,7 @@ yarn  # install the dependencies
 ### Configure it
 
 Create the file __config.json__ at the root of the project. In your favorite editor, write something similar to the following.
-Replace blenderExec by the actual path to your blender executable. The rest can be left as is.
+Under *blenderExec*, write the actual path to your blender executable. The rest can be left as is.
 
 ```json
 {
