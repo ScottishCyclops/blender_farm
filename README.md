@@ -39,7 +39,6 @@ Replace blenderExec by the actual path to your blender executable. The rest can 
 
 ```json
 {
-{
   "certPath": "/ssl/blender.local.crt",
   "keyPath": "/ssl/blender.local.key",
   "port": 4434,
