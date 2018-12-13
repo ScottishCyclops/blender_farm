@@ -13,9 +13,14 @@ const jobType = null
  */
 const deviceType = null
 
+/**
+ * @type {{id: number, jobList: typeof jobType }}
+ */
+const renderNodeType = null
 
 module.exports = {
   blenderOutputType,
   jobType,
-  deviceType
+  deviceType,
+  renderNodeType,
 }
