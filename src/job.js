@@ -1,40 +1,22 @@
-const { getData, getDevices, render, blenderOutput, parseBlenderOutputLine } = require('./blender')
+const { getData, getDevices, render, parseBlenderOutputLine } = require('./blender')
+const { jobType, deviceType } = require('./types')
 const consts = require('./consts')
 const { log, err, md5Hash } = require('./utils')
 
 /**
- * @type {{status: string, nodes: { [x:string]: typeof blenderOutput }, name: string, id: string, type: 'still' | 'animation', blendFile: string, data: {startFrane: number, endFrame: number}}}
+ * Create the devices list
+ *
+ * @returns {{[x: number]: typeof deviceType}}
+ * @unpure
  */
-const jobType = null
-
-/**
- * @type {{id: number, busy: boolean}}
- */
-const deviceType = null
-
-/**
- * @type {{[x: string]: typeof jobType}}
- */
-const jobsList = {
-}
-
-/**
- * List of all running nodes indexed by PID
- * @type {{[x: string]: ChildProcess}}
- */
-const nodesList = {
-
-}
-
-
-// build the devices list
-const numDevices = getDevices()
-/**
- * @type {{[x: number]: typeof deviceType}}
- */
-const devicesList = {}
-for (let id = 0; id < numDevices; ++id) {
-  devicesList[id] = { id, busy: false }
+function makeDevicesList()
+{
+  const numDevices = getDevices()
+  const devicesList = {}
+  for (let id = 0; id < numDevices; ++id) {
+    devicesList[id] = { id, busy: false }
+  }
+  return devicesList
 }
 
 /**
@@ -44,7 +26,29 @@ for (let id = 0; id < numDevices; ++id) {
  * @returns {string} the full path to the output for a job
  * @pure
  */
-const outputFolder = job => `${consts.ROOT_DIR}/public/${job.name}_${job.id}`
+function outputFolder(job)
+{
+  return `${consts.ROOT_DIR}/public/${job.name}_${job.id}`
+}
+
+/**
+ * The list of devices that are avaiable for 3D Rendering
+ */
+const devicesList = makeDevicesList()
+
+/**
+ * The list of jobs registered by the user
+ *
+ * @type {{[x: string]: typeof jobType}}
+ */
+const jobsList = {}
+
+/**
+ * List of all running nodes indexed by PID
+ *
+ * @type {{[x: string]: ChildProcess}}
+ */
+const nodesList = {}
 
 /**
  * Starts a node for the given job with the given devices
@@ -95,8 +99,11 @@ function startJobNode(job, devices)
 }
 
 /**
+ * Gather the data for a job then run nodes in the most appropriate way to finish the job as fast as possible.
  *
- * @param {typeof jobType} job
+ * @param {typeof jobType} job the job to run
+ * @returns {Promise<void>} nothing
+ * @unpure
  */
 async function doJobAsync(job)
 {
@@ -135,10 +142,13 @@ async function doJobAsync(job)
 }
 
 /**
- * Start a new job in async and get it's id
+ * Register a new job and get it's id. Starts the job in async
+ *
  * @param {string} name the name of the job
  * @param {string} blendFile relative path to the blendFile in the public directory
  * @param {typeof jobType.type} type the type of job. still or animation
+ * @returns {string} the unique id of the job
+ * @unpure
  */
 function startNewJob(name, blendFile, type)
 {
@@ -167,6 +177,7 @@ function startNewJob(name, blendFile, type)
  *
  * @param {typeof jobType} job the job to cancel
  * @returns {string} a message saying what happened
+ * @unpure
  */
 function cancelJob(job)
 {
