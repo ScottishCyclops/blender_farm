@@ -12,9 +12,8 @@ for i in range(len(devices)):
   devices[i].use = (i in params['devices'])
 
 is_animation = bool(params['type'] == 'animation')
-file_name = bpy.data.filepath.split('/')[-1].split('.blend')[0]
 
-file_path = os.path.join(params['outputFolder'], file_name)
+file_path = os.path.join(params['outputFolder'], params['fileName'])
 if is_animation:
     file_path += '-'
 

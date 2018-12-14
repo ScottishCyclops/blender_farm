@@ -1,6 +1,6 @@
 const https = require('https')
 const e = require('express')
-const { jobsList, cancelJob, startNewJob } = require('./job')
+const { jobsList, cancelJob, startNewJob, retrieveJob, fileName } = require('./job')
 const { err } =  require('./utils')
 const consts = require('./consts')
 const { normalize } = require('path')
@@ -74,6 +74,35 @@ const makeExpressServer = credentials =>
 
     const id = startNewJob(req.query.name, normalize(path), req.query.type)
     return res.json({ id })
+  })
+
+  app.get('/retrieve', async (req, res) =>
+  {
+    // field exists
+    if (!req.query.hasOwnProperty('id')) return res.status(400).json({ err: 'Bad Request. Missing parameter "id".' })
+
+    // job exists
+    if (!jobsList.hasOwnProperty(req.query.id)) return res.status(404).json({ err: `Not Found. No job matching "${req.query.id}".`})
+
+    const job = jobsList[req.query.id]
+
+    if (job.status !== 'Finished') return res.status(400).json({ err: `Job is not finished. Job is "${job.status}".`})
+
+    const path = await retrieveJob(jobsList[req.query.id])
+
+
+    // rename the download
+    const name = fileName(job) + (job.type === 'animation' ? '.tar.gz' : '.png')
+    res.set({ 'Content-Disposition': `attachment; filename="${name}"` })
+
+    res.sendFile(path, e =>
+    {
+      if (!e) return
+
+      // give a proper error message in case of failure
+      err(e)
+      return res.status(500).json({ err: `Output should be ready but wasn't found on the server.`})
+    })
   })
 
 

@@ -1,5 +1,8 @@
 const crypto = require('crypto')
 const moment = require('moment')
+const { spawnSync } = require('child_process')
+const { normalize, dirname, basename } = require('path')
+const { lstatSync } = require('fs')
 
 /**
  * Output a list of strings as a log to the stdout
@@ -10,7 +13,7 @@ const moment = require('moment')
  */
 function log(...args)
 {
-  process.stdout.write(`[?] ${args.join(' ')}`)
+  process.stdout.write(`[?] ${args.join(' ')}\n`)
 }
 
 /**
@@ -22,7 +25,7 @@ function log(...args)
  */
 function warn(...args)
 {
-  process.stdout.write(`[!] ${args.join(' ')}`)
+  process.stdout.write(`[!] ${args.join(' ')}\n`)
 }
 
 /**
@@ -34,7 +37,7 @@ function warn(...args)
  */
 function err(...args)
 {
-  process.stdout.write(`[x] ${args.join(' ')}`)
+  process.stdout.write(`[x] ${args.join(' ')}\n`)
 }
 
 /**
@@ -81,11 +84,48 @@ function parseTimeString(timeString)
   return moment.duration(`00:${timeString}`).asMilliseconds()
 }
 
+/**
+ * Create a tar.gz archive from the given folder
+ *
+ * @param {string} folderPath a path to an existing folder
+ * @returns {Promise<string>} path to the created archive
+ * @unpure
+ */
+function tarFolder(folderPath)
+{
+  return new Promise((resolve, reject) =>
+  {
+    const isDir = lstatSync(folderPath).isDirectory()
+
+    if (!isDir) return reject(`"${folderPath}" is not a directory`)
+
+    const normalized = normalize(folderPath)
+    const archivePath = `${normalized}.tar.gz`
+
+    const parentDir = dirname(normalized)
+    const folderName = basename(normalized)
+
+    // tar
+    // -z : Compress archive using gzip program
+    // -c: Create archive
+    // -f: Archive File name
+    // -C: change directory
+    // last param: name of folder to archive
+    // this method was used to produce an archive with a single folder inside, with the original name
+    const process = spawnSync('tar', [ '-zcf', archivePath, '-C', parentDir, folderName ])
+
+    if (process.error) return reject(process.error)
+
+    resolve(archivePath)
+  })
+}
+
 module.exports = {
   log,
   warn,
   err,
   assert,
   md5Hash,
-  parseTimeString
+  parseTimeString,
+  tarFolder,
 }

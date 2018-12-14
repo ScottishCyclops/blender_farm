@@ -1,7 +1,8 @@
 const { getData, getDevices, render, parseBlenderOutputLine } = require('./blender')
 const { jobType, deviceType, renderNodeType } = require('./types')
 const consts = require('./consts')
-const { log, err, md5Hash } = require('./utils')
+const { log, err, md5Hash, tarFolder } = require('./utils')
+const { join } = require('path')
 
 /**
  * Create the devices list
@@ -29,6 +30,18 @@ function makeDevicesList()
 function outputFolder(job)
 {
   return `${consts.ROOT_DIR}/public/${job.name}_${job.id}`
+}
+
+/**
+ * Get the file name for a job
+ *
+ * @param {typeof jobType} job the job
+ * @returns {string} the name of the output file
+ * @pure
+ */
+function fileName(job)
+{
+  return `${job.name}_${job.id}`
 }
 
 /**
@@ -76,7 +89,7 @@ function startJobNode(job, devices)
   return new Promise((resolve, reject) =>
   {
     log(`starting job node for "${job.name}"`)
-    const child = render(job.blendFile, { type: job.type, devices, outputFolder: outputFolder(job) })
+    const child = render(job.blendFile, { type: job.type, devices, outputFolder: outputFolder(job), fileName: fileName(job) })
 
     // save the child to be able to cancel the render
     const pid = child.pid
@@ -204,8 +217,27 @@ function cancelJob(job)
   return 'Canceled'
 }
 
+/**
+ * Retrieve the path to the output of a job that has finished.
+ * If job is an animation, creates a tar.gz archive file containing all the frames
+ *
+ * @param {typeof jobType} job the job to retrieve
+ * @returns {Promise<string>} the path of the output file or archive
+ * @unpure
+ */
+async function retrieveJob(job)
+{
+  if (job.type === 'still') {
+    return join(outputFolder(job), `${fileName(job)}.png`)
+  }
+
+  return tarFolder(outputFolder(job))
+}
+
 module.exports = {
   jobsList,
   startNewJob,
   cancelJob,
+  retrieveJob,
+  fileName,
 }

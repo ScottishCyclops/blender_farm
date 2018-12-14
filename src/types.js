@@ -4,7 +4,12 @@
 const blenderOutputType = null
 
 /**
- * @type {{status: string, nodes: {[x:string]: typeof blenderOutputType}, name: string, id: string, type: 'still' | 'animation', blendFile: string, data: {startFrane: number, endFrame: number}}}
+ * @type {'Pending' | 'Gathering data' | 'Rendering' | 'Canceled' | 'Finished' }
+ */
+const statusType = null
+
+/**
+ * @type {{status: typeof statusType, nodes: {[x:string]: typeof blenderOutputType}, name: string, id: string, type: 'still' | 'animation', blendFile: string, data: {startFrane: number, endFrame: number}}}
  */
 const jobType = null
 
