@@ -59,17 +59,23 @@ function assert(x, code, ...error)
 }
 
 /**
- * Get the MD5 hash of the given strings
+ * Get the MD5 hash of the data (string or buffer)
  *
- * @param {...string} strings a list of strings
+ * @param {string | Buffer} data a string or buffer
  * @returns {string} an hexadecimal hash string
  * @pure
  */
-function md5Hash(...strings)
+function md5Hash(data)
 {
-  const md5sum = crypto.createHash('md5')
-  md5sum.update(strings.join(''))
-  return md5sum.digest('hex')
+  const hash = crypto.createHash('md5')
+
+  hash.setEncoding('hex')
+
+  hash.write(data)
+
+  hash.end()
+
+  return hash.read()
 }
 
 /**

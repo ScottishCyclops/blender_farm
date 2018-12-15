@@ -158,7 +158,7 @@ async function prepareJob(job)
  */
 function registerNewJob(name, blendFile, type)
 {
-  const id = md5Hash(blendFile, Date.now())
+  const id = md5Hash(blendFile + Date.now())
 
   /**
    * @type {typeof jobType}
