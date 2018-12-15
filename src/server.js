@@ -62,7 +62,7 @@ const makeExpressServer = credentials =>
     // field exists
     if (!req.query.hasOwnProperty('blendFile')) return res.status(400).json({ err: 'Bad Request. Missing parameter "blendFile".' })
 
-    const path = `${consts.ROOT_DIR}/public${req.query.blendFile}`
+    const path = `${consts.ROOT_DIR}/public/blendfiles/${req.query.blendFile}`
     // path is absolute and leading to a potential blend file
     if (!req.query.blendFile.startsWith('/') || !req.query.blendFile.endsWith('.blend') || path.indexOf('..') !== -1) return res.status(400).json({ err: 'Bad Request. Invalid "blendFile". Must be an absolute path starting with "/" and ending with ".blend"' })
     // path exists and is a file
@@ -130,7 +130,7 @@ const makeExpressServer = credentials =>
 
     // write the file
     const hash = md5Hash(req.file.buffer)
-    const path = normalize(`${consts.ROOT_DIR}/public/${req.body.name}_${hash}.blend`)
+    const path = normalize(`${consts.ROOT_DIR}/public/blendfiles/${req.body.name}_${hash}.blend`)
     // no need to check if the file already exists
     // it's more intense to check everytime than it is to rewrite the file once in a while
     writeFileSync(path, req.file.buffer, { encoding: 'binary' })

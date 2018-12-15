@@ -5,7 +5,7 @@ const { existsSync } = require('fs')
 const { getData, getDevices, render, parseBlenderOutputLine } = require('./blender')
 const { jobType, deviceType } = require('./types')
 const consts = require('./consts')
-const { log, err, md5Hash, tarFolder, wait } = require('./utils')
+const { log, err, md5Hash, tarFolder } = require('./utils')
 
 /**
  * Create the devices list
@@ -37,7 +37,7 @@ function makeDevicesList()
  */
 function outputFolder(job)
 {
-  return `${consts.ROOT_DIR}/public/${job.name}_${job.id}`
+  return `${consts.ROOT_DIR}/public/output/${job.name}_${job.id}`
 }
 
 /**
@@ -273,12 +273,12 @@ async function retrieveJob(job)
     return join(folder, `${fileName(job)}.png`)
   }
 
-  const archive = `${folder}.tar.gz`
+  const archive = `${consts.ROOT_DIR}/public/archives/${job.name}_${job.id}.tar.gz`
 
   // don't recreate the archive if the output is retrieved multiple times
-  if (existsSync(archive)) return archive
+  if (!existsSync(archive)) tarFolder(folder, archive)
 
-  return tarFolder(folder)
+  return archive
 }
 
 function startFarm()

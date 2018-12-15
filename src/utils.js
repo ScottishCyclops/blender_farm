@@ -94,10 +94,11 @@ function parseTimeString(timeString)
  * Create a tar.gz archive from the given folder
  *
  * @param {string} folderPath a path to an existing folder
- * @returns {Promise<string>} path to the created archive
+ * @param {string} archivePath the full path of the archive to create
+ * @returns {Promise<void>} nothing
  * @unpure
  */
-function tarFolder(folderPath)
+function tarFolder(folderPath, archivePath)
 {
   return new Promise((resolve, reject) =>
   {
@@ -106,7 +107,6 @@ function tarFolder(folderPath)
     if (!isDir) return reject(`"${folderPath}" is not a directory`)
 
     const normalized = normalize(folderPath)
-    const archivePath = `${normalized}.tar.gz`
 
     const parentDir = dirname(normalized)
     const folderName = basename(normalized)
@@ -118,11 +118,11 @@ function tarFolder(folderPath)
     // -C: change directory
     // last param: name of folder to archive
     // this method was used to produce an archive with a single folder inside, with the original name
-    const process = spawnSync('tar', [ '-zcf', archivePath, '-C', parentDir, folderName ])
+    const process = spawnSync('tar', [ '-zcf', normalize(archivePath), '-C', parentDir, folderName ])
 
     if (process.error) return reject(process.error)
 
-    resolve(archivePath)
+    resolve()
   })
 }
 
