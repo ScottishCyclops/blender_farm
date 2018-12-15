@@ -3,7 +3,7 @@ const { EventEmitter } = require('events')
 const { existsSync } = require('fs')
 
 const { getData, getDevices, render, parseBlenderOutputLine } = require('./blender')
-const { jobType, deviceType, renderNodeType } = require('./types')
+const { jobType, deviceType } = require('./types')
 const consts = require('./consts')
 const { log, err, md5Hash, tarFolder } = require('./utils')
 
@@ -72,6 +72,21 @@ const jobsList = {}
 const nodesList = {}
 
 /**
+ * Default broadcast function
+ * @type {(message: {event: string, data: any}) => void}
+ */
+let broadcast = () => undefined
+
+/**
+ * Set the broadcast function used by the job logic
+ * @param {(message: {event: string, data: any}) => void} func
+ */
+function setBroadcast(func)
+{
+  broadcast = func
+}
+
+/**
  * Starts a node for the given job with the given devices
  *
  * @param {typeof jobType} job the job object
@@ -86,7 +101,14 @@ function startJobNode(job, devices)
     log(`starting job node for "${job.name}"`)
 
     // change the status
-    if (job.status === 'Pending') job.status = 'Rendering'
+    if (job.status === 'Pending') {
+      job.status = 'Rendering'
+
+      broadcast({
+        event: 'jobStart',
+        data: job
+      })
+    }
 
     const child = render(job.blendFile, { type: job.type, devices, outputFolder: outputFolder(job), fileName: fileName(job) })
 
@@ -134,6 +156,11 @@ function startJobNode(job, devices)
         // if the status is canceled, don't overwrite it
         if (job.status !== 'Canceled') job.status = 'Finished'
         log(`finished job "${job.name}"`)
+
+        broadcast({
+          event: 'jobEnd',
+          data: job
+        })
       }
 
       return resolve()
@@ -300,4 +327,5 @@ module.exports = {
   cancelJob,
   retrieveJob,
   fileName,
+  setBroadcast,
 }

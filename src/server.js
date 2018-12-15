@@ -1,11 +1,12 @@
 const https = require('https')
 const e = require('express')
-const { jobsList, cancelJob, registerNewJob, retrieveJob, fileName } = require('./job')
+const { jobsList, cancelJob, registerNewJob, retrieveJob, fileName, setBroadcast } = require('./job')
 const { err, md5Hash } =  require('./utils')
 const consts = require('./consts')
 const { normalize } = require('path')
 const { existsSync, statSync, writeFileSync } = require('fs')
 const multer = require('multer')
+const WebSocket = require('ws')
 
 const nameRegexp = new RegExp(/^[a-zA-Z0-9_-]+$/g)
 
@@ -138,7 +139,23 @@ const makeExpressServer = credentials =>
     return res.json({ id })
   })
 
-  // TODO: socket for realtime info
+  const wss = new WebSocket.Server({ server })
+
+  // Relay informations from the job logic to the websocket clients
+  setBroadcast(data =>
+  {
+    wss.clients.forEach(client =>
+    {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(JSON.stringify(data), e => e && err(e))
+      }
+    })
+  })
+
+  wss.on('connection', (ws, req) =>
+  {
+    log('New WebSocket client:', req.connection.remoteAddress)
+  })
 
   return { server, app }
 }
