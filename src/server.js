@@ -1,6 +1,6 @@
 const https = require('https')
 const e = require('express')
-const { jobsList, cancelJob, startNewJob, retrieveJob, fileName } = require('./job')
+const { jobsList, cancelJob, registerNewJob, retrieveJob, fileName } = require('./job')
 const { err } =  require('./utils')
 const consts = require('./consts')
 const { normalize } = require('path')
@@ -43,9 +43,9 @@ const makeExpressServer = credentials =>
     // job exists
     if (!jobsList.hasOwnProperty(req.query.id)) return res.status(404).json({ err: `Not Found. No job matching "${req.query.id}".`})
 
-    const result = cancelJob(jobsList[req.query.id])
+    cancelJob(jobsList[req.query.id])
 
-    return res.json({ log: `Job ${req.query.id}: ${result}`})
+    return res.json({ log: `Job ${req.query.id} got Canceled`})
   })
 
   app.get('/render', (req, res) =>
@@ -72,7 +72,7 @@ const makeExpressServer = credentials =>
     // type is still or animation
     if (req.query.type !== 'still' && req.query.type !== 'animation') return res.status(400).json({ err: 'Bad Request. Invalid "type". Must be either "still" or "animation".' })
 
-    const id = startNewJob(req.query.name, normalize(path), req.query.type)
+    const id = registerNewJob(req.query.name, normalize(path), req.query.type)
     return res.json({ id })
   })
 
@@ -130,7 +130,7 @@ const makeExpressServer = credentials =>
     // type is still or animation
     if (req.query.type !== 'still' && req.query.type !== 'animation') return res.status(400).json({ err: 'Bad Request. Invalid "type". Must be either "still" or "animation".' })
 
-    const id = startNewJob(req.query.name, normalize(path), req.query.type)
+    const id = registerNewJob(req.query.name, normalize(path), req.query.type)
     return res.json({ id })
   })
 

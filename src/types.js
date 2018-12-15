@@ -1,3 +1,5 @@
+const { EventEmitter } = require('events')
+
 /**
  * @type {{frame: number, memory_global: number, render_time: number, remaining_time?: number, memory_current: number, memory_current_peak: number, scene: string, render_layer: string, information: string, extra_information?: string}}
  */
@@ -14,12 +16,12 @@ const statusType = null
 const jobType = null
 
 /**
- * @type {{id: number, busy: boolean}}
+ * @type {{id: number, running: boolean, pendingJobs: string[], events: EventEmitter}}
  */
 const deviceType = null
 
 /**
- * @type {{id: number, jobList: typeof jobType }}
+ * @type {{device: typeof deviceType, jobList: {[x: string]: typeof jobType}}}
  */
 const renderNodeType = null
 
