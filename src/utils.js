@@ -126,6 +126,15 @@ function tarFolder(folderPath)
   })
 }
 
+/**
+ * Creates a promise that gets resolved after the provided amount of milliseconds
+ * 
+ * @param {number} t the number of milliseconds before resolving the promise
+ * @returns {Promise<void>} nothing
+ * @unpure
+ */
+const wait = t => new Promise(resolve => setTimeout(resolve, t))
+
 module.exports = {
   log,
   warn,
@@ -134,4 +143,5 @@ module.exports = {
   md5Hash,
   parseTimeString,
   tarFolder,
+  wait,
 }

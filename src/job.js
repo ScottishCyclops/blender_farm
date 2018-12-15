@@ -5,7 +5,7 @@ const { existsSync } = require('fs')
 const { getData, getDevices, render, parseBlenderOutputLine } = require('./blender')
 const { jobType, deviceType } = require('./types')
 const consts = require('./consts')
-const { log, err, md5Hash, tarFolder } = require('./utils')
+const { log, err, md5Hash, tarFolder, wait } = require('./utils')
 
 /**
  * Create the devices list
@@ -307,6 +307,9 @@ function startFarm()
 
         // stop if there are no more jobs to render
         if (!currentJob) break
+
+        // have all devices wait a different amount of time before starting to make sure they don't collide
+        await wait(device.id * 5)
 
         await startJobNode(jobsList[currentJob], [ device.id ])
         device.events.emit('jobDone', currentJob)
