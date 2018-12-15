@@ -119,7 +119,22 @@ function startJobNode(job, devices)
       log(`finished job node for "${job.name}"`)
       delete nodesList[pid]
 
-      if (job.status !== 'Canceled') job.status = 'Finished'
+      // check if the job is finished
+      // we might be done, but more frames might still be rendered by other nodes !
+
+      // job is done if all nodes that rendered it say they are finished
+      const jobIsDone = Object.values(job.nodes).every(node => node.information === 'Finished')
+
+      if (jobIsDone) {
+        // tell all nodes that potentially haven't started this job to forget it
+        for (const device in devicesList) {
+          devicesList[device].events.emit('removeJob', job.id)
+        }
+
+        // if the status is canceled, don't overwrite it
+        if (job.status !== 'Canceled') job.status = 'Finished'
+        log(`finished job "${job.name}"`)
+      }
 
       return resolve()
     })
@@ -198,7 +213,7 @@ function cancelJob(job)
 
   // tell all nodes that potentially haven't started this job to forget it
   for (const device in devicesList) {
-    devicesList[device].events.emit('cancelJob', job.id)
+    devicesList[device].events.emit('removeJob', job.id)
   }
 }
 
@@ -243,7 +258,7 @@ function startFarm()
       run().catch(err)
     })
 
-    device.events.on('cancelJob', id =>
+    device.events.on('removeJob', id =>
     {
       const index = device.pendingJobs.indexOf(id)
       if (index === -1) return
