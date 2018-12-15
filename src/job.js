@@ -106,7 +106,7 @@ function startJobNode(job, devices)
 
       broadcast({
         event: 'jobStart',
-        data: job
+        data: { job }
       })
     }
 
@@ -119,6 +119,15 @@ function startJobNode(job, devices)
     const onprogress = status =>
     {
       job.nodes[pid] = status
+
+      broadcast({
+        event: 'jobStatus',
+        data: {
+          job,
+          node: pid,
+          status
+        }
+      })
     }
 
     child.stdout.on('data', data =>
@@ -159,7 +168,7 @@ function startJobNode(job, devices)
 
         broadcast({
           event: 'jobEnd',
-          data: job
+          data: { job }
         })
       }
 
@@ -183,9 +192,14 @@ async function prepareJob(job)
   job.data = await getData(job.blendFile)
   job.status = 'Pending'
 
-  // queue the job on every device
-  for (const device in devicesList) {
-    devicesList[device].events.emit('newJob', job.id)
+  if (job.type === 'animation') {
+    // queue the job on every device
+    for (const device in devicesList) {
+      devicesList[device].events.emit('newJob', job.id)
+    }
+  } else {
+    // start still jobs in async
+    startJobNode(job, Object.values(devicesList).map(device => device.id)).catch(err)
   }
 }
 
@@ -307,9 +321,6 @@ function startFarm()
 
         // stop if there are no more jobs to render
         if (!currentJob) break
-
-        // have all devices wait a different amount of time before starting to make sure they don't collide
-        await wait(device.id * 5)
 
         await startJobNode(jobsList[currentJob], [ device.id ])
         device.events.emit('jobDone', currentJob)
