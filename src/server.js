@@ -1,10 +1,11 @@
 const https = require('https')
 const e = require('express')
 const { jobsList, cancelJob, registerNewJob, retrieveJob, fileName } = require('./job')
-const { err } =  require('./utils')
+const { err, md5Hash } =  require('./utils')
 const consts = require('./consts')
 const { normalize } = require('path')
-const { existsSync, statSync } = require('fs')
+const { existsSync, statSync, writeFileSync } = require('fs')
+const multer = require('multer')
 
 const nameRegexp = new RegExp(/^[a-zA-Z0-9_-]+$/g)
 
@@ -106,31 +107,34 @@ const makeExpressServer = credentials =>
   })
 
 
-  app.post('/render', (req, res) =>
+  app.post('/render', multer({ storage: multer.memoryStorage() }).single('blendFile'), (req, res) =>
   {
+    // https://github.com/expressjs/express/issues/3264
+    req.body = JSON.parse(JSON.stringify(req.body))
     // NAME
     // field exists
     if (!req.body.hasOwnProperty('name')) return res.status(400).json({ err: 'Bad Request. Missing parameter "name".' })
     // name matches the regexp
     if (!req.body.name.match(nameRegexp)) return res.status(400).json({ err: 'Bad Request. Invalid "name". Can contain: "a-z", "A-Z", "0-9", "_", or "-".' })
 
-    // BLENDFILE
-    // field exists
-    if (!req.body.hasOwnProperty('blendFile')) return res.status(400).json({ err: 'Bad Request. Missing parameter "blendFile".' })
-
-    const path = `${consts.ROOT_DIR}/public${req.query.blendFile}`
-    // path is absolute and leading to a potential blend file
-    if (!req.query.blendFile.startsWith('/') || !req.query.blendFile.endsWith('.blend') || path.indexOf('..') !== -1) return res.status(400).json({ err: 'Bad Request. Invalid "blendFile". Must be an absolute path starting with "/" and ending with ".blend"' })
-    // path exists and is a file
-    if (!existsSync(path) || !statSync(path).isFile()) return res.status(400).json({ err: 'Bad Request. Invalid "blendFile". File does not exist' })
-
     // TYPE
     // field exists
-    if (!req.query.hasOwnProperty('type')) return res.status(400).json({ err: 'Bad Request. Missing parameter "type".' })
+    if (!req.body.hasOwnProperty('type')) return res.status(400).json({ err: 'Bad Request. Missing parameter "type".' })
     // type is still or animation
-    if (req.query.type !== 'still' && req.query.type !== 'animation') return res.status(400).json({ err: 'Bad Request. Invalid "type". Must be either "still" or "animation".' })
+    if (req.body.type !== 'still' && req.body.type !== 'animation') return res.status(400).json({ err: 'Bad Request. Invalid "type". Must be either "still" or "animation".' })
 
-    const id = registerNewJob(req.query.name, normalize(path), req.query.type)
+    // BLENDFILE
+    // file exists
+    if (!req.file) return res.status(400).json({ err: 'Bad Request. Missing file "blendFile".' })
+
+    // write the file
+    const hash = md5Hash(req.file.buffer)
+    const path = normalize(`${consts.ROOT_DIR}/public/${req.body.name}_${hash}.blend`)
+    // no need to check if the file already exists
+    // it's more intense to check everytime than it is to rewrite the file once in a while
+    writeFileSync(path, req.file.buffer, { encoding: 'binary' })
+
+    const id = registerNewJob(req.body.name, path, req.body.type)
     return res.json({ id })
   })
 
