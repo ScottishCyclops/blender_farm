@@ -1,6 +1,6 @@
 const { join } = require('path')
 const { EventEmitter } = require('events')
-const { existsSync } = require('fs')
+const { existsSync, unlinkSync, removeSync } = require('fs-extra')
 
 const { getData, getDevices, render, parseBlenderOutputLine } = require('./blender')
 const { jobType, deviceType } = require('./types')
@@ -33,12 +33,24 @@ function makeDevicesList()
  * Get the output folder for a job
  *
  * @param {typeof jobType} job the job
- * @returns {string} the full path to the output for a job
+ * @returns {string} the full path to the output for the job
  * @pure
  */
 function outputFolder(job)
 {
   return `${consts.ROOT_DIR}/public/output/${job.name}_${job.id}`
+}
+
+/**
+ * Get the archive path for a job
+ *
+ * @param {typeof jobType} job the job
+ * @returns {string} the full path to tthe arxhive for the job
+ * @pure
+ */
+function archivePath(job)
+{
+  return `${consts.ROOT_DIR}/public/archives/${job.name}_${job.id}.tar.gz`
 }
 
 /**
@@ -262,6 +274,31 @@ function cancelJob(job)
 }
 
 /**
+ * Remove all traces of the job in memory and on disk
+ *
+ * @param {typeof jobType} job the job to delete
+ * @returns {void} nothing
+ * @unpure
+ */
+function deleteJob(job)
+{
+  if (job.status !== 'Finished' && job.status !== 'Canceled') cancelJob(job)
+
+  const potentialArchive = archivePath(job)
+
+  try {
+    unlinkSync(job.blendFile)
+    removeSync(outputFolder(job))
+
+    if (existsSync(potentialArchive)) unlinkSync(potentialArchive)
+  } catch (e) {
+    err('Deleting job files:', e)
+  }
+
+  delete jobsList[job.id]
+}
+
+/**
  * Retrieve the path to the output of a job that has finished.
  * If job is an animation, creates a tar.gz archive file containing all the frames
  *
@@ -276,7 +313,7 @@ async function retrieveJob(job)
     return join(folder, `${fileName(job)}.png`)
   }
 
-  const archive = `${consts.ROOT_DIR}/public/archives/${job.name}_${job.id}.tar.gz`
+  const archive = archivePath(job)
 
   // don't recreate the archive if the output is retrieved multiple times
   if (!existsSync(archive)) tarFolder(folder, archive)
@@ -345,4 +382,5 @@ module.exports = {
   retrieveJob,
   fileName,
   setBroadcast,
+  deleteJob,
 }

@@ -1,6 +1,6 @@
 const https = require('https')
 const e = require('express')
-const { jobsList, cancelJob, registerNewJob, retrieveJob, fileName, setBroadcast } = require('./job')
+const { jobsList, cancelJob, registerNewJob, retrieveJob, fileName, setBroadcast, deleteJob } = require('./job')
 const { err, md5Hash } =  require('./utils')
 const consts = require('./consts')
 const { normalize } = require('path')
@@ -51,6 +51,19 @@ const makeExpressServer = credentials =>
     cancelJob(jobsList[req.query.id])
 
     return res.json({ log: `Job ${req.query.id} got Canceled`})
+  })
+
+  app.get('/delete', (req, res) =>
+  {
+    // field exists
+    if (!req.query.hasOwnProperty('id')) return res.status(400).json({ err: 'Bad Request. Missing parameter "id".' })
+
+    // job exists
+    if (!jobsList.hasOwnProperty(req.query.id)) return res.status(404).json({ err: `Not Found. No job matching "${req.query.id}".`})
+
+    deleteJob(jobsList[req.query.id])
+
+    return res.json({ log: `Files for job ${req.query.id} were deleted`})
   })
 
   app.get('/render', (req, res) =>
