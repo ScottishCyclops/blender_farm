@@ -8,7 +8,9 @@
   "license": "MIT",
   "scripts": {
     "start": "node src/main.js",
-    "genkeys": "openssl req -config ssl/blender.local.conf -new -sha256 -newkey rsa:2048 -nodes -keyout ssl/blender.local.key -x509 -days 365 -out ssl/blender.local.crt"
+    "genkeys": "openssl req -config ssl/blender.local.conf -new -sha256 -newkey rsa:2048 -nodes -keyout ssl/blender.local.key -x509 -days 365 -out ssl/blender.local.crt",
+    "watch": "cross-env NODE_ENV=development node_modules/webpack/bin/webpack.js --watch --progress --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js",
+    "build": "cross-env NODE_ENV=production node_modules/webpack/bin/webpack.js --progress --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js"
   },
   "dependencies": {
     "body-parser": "^1.18.3",
@@ -21,5 +23,13 @@
     "multer": "^1.4.1",
     "utf-8-validate": "^5.0.1",
     "ws": "^6.1.2"
+  },
+  "devDependencies": {
+    "cross-env": "^5.2.0",
+    "laravel-mix": "^4.0.12",
+    "mithril": "^1.1.6",
+    "sass": "^1.15.2",
+    "sass-loader": "7.*",
+    "vue-template-compiler": "^2.5.21"
   }
 }

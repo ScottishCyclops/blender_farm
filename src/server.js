@@ -22,7 +22,9 @@ const makeExpressServer = credentials =>
   const app = e()
   app.use(require('helmet')())
   app.use(require('body-parser').json())
-  // secure the files under hierarchy
+
+  // serve web app
+  app.use(e.static(consts.ROOT_DIR + '/public/webapp'))
 
   const server = https.createServer(credentials, app)
 
