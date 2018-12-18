@@ -77,7 +77,7 @@ function jobProgress(job)
 
     const totalTime = nodes[0].render_time + nodes[0].remaining_time
 
-    return nodes[0].remaining_time / totalTime
+    return 1 - nodes[0].remaining_time / totalTime
   }
 
   const numFrames = job.data.endFrame - job.data.startFrame + 1
