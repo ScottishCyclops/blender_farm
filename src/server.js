@@ -29,12 +29,15 @@ const makeExpressServer = credentials =>
   app.get('/status', (req, res) =>
   {
     // field exists
-    if (!req.query.hasOwnProperty('id')) return res.status(400).json({ err: 'Bad Request. Missing parameter "id".' })
+    if (req.query.hasOwnProperty('id')) {
+      // job exists
+      if (!jobsList.hasOwnProperty(req.query.id)) return res.status(404).json({ err: `Not Found. No job matching "${req.query.id}".`})
 
-    // job exists
-    if (!jobsList.hasOwnProperty(req.query.id)) return res.status(404).json({ err: `Not Found. No job matching "${req.query.id}".`})
+      return res.json(jobsList[req.query.id])
+    }
 
-    return res.json(jobsList[req.query.id])
+    // without id, send status of all jobs
+    return res.json(jobsList)
   })
 
   app.get('/cancel', (req, res) =>
