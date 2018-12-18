@@ -6,6 +6,7 @@ const { getData, getDevices, render, parseBlenderOutputLine } = require('./blend
 const { jobType, deviceType } = require('./types')
 const consts = require('./consts')
 const { log, err, md5Hash, tarFolder } = require('./utils')
+const moment = require('moment')
 
 /**
  * Create the devices list
@@ -164,6 +165,7 @@ function startJobNode(job, devices)
 
         // if the status is canceled, don't overwrite it
         if (job.status !== 'Canceled') job.status = 'Finished'
+        job.completeTime = moment().unix()
         log(`finished job "${job.name}"`)
 
         broadcast({
@@ -220,6 +222,7 @@ function registerNewJob(name, blendFile, type)
    * @type {typeof jobType}
    */
   const job = {
+    initTime: moment().unix(),
     id,
     name,
     status: 'Pending',
