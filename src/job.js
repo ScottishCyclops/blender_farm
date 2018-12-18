@@ -264,7 +264,7 @@ function cancelJob(job)
 
   // kill the nodes that are already rendering this job (there might be none)
   for (const pid in job.nodes) {
-    nodesList[pid].kill()
+    if (nodesList[pid]) nodesList[pid].kill()
   }
 
   // tell all nodes that potentially haven't started this job to forget it
