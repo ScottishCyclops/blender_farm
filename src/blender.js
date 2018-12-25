@@ -90,6 +90,7 @@ function getData(blendFile)
     child.stdout.on('data', data =>
     {
       const lines = data.toString().split('\n')
+      console.log(data)
 
       for (const line of lines) {
         if (!line.startsWith(getDataScriptPrefix)) continue
