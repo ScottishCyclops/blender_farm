@@ -90,7 +90,6 @@ function getData(blendFile)
     child.stdout.on('data', data =>
     {
       const lines = data.toString().split('\n')
-      console.log(data)
 
       for (const line of lines) {
         if (!line.startsWith(getDataScriptPrefix)) continue
@@ -99,8 +98,6 @@ function getData(blendFile)
         child.kill()
         return resolve(json)
       }
-
-      return reject('invalid stdout')
     })
 
     child.on('error', reject)
