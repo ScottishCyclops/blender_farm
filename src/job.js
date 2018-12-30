@@ -159,7 +159,8 @@ function startJobNode(job, devices)
     child.on('close', (code, signal) =>
     {
       // ignore SIGTERM, because it means the job got canceled
-      if (code !== 0 && signal !== 'SIGTERM') return reject(signal)
+      // ignore SIGABRT, because Blender 2.8 returns it when finishing an EVEE render for now
+      if (code !== 0 && signal !== 'SIGTERM' && signal !== 'SIGABRT') return reject(signal)
       log(`finished job node for "${job.name}"`)
       delete nodesList[pid]
 
