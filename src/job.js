@@ -207,7 +207,8 @@ async function prepareJob(job)
   job.data = await getData(job.blendFile, job.blender28)
   job.status = 'Pending'
 
-  if (job.type === 'animation') {
+  // never render evee on multiple instances
+  if (job.type === 'animation' && job.data.engine !== 'BLENDER_EVEE') {
     // queue the job on every device
     for (const device in devicesList) {
       devicesList[device].events.emit('newJob', job.id)

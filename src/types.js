@@ -11,7 +11,7 @@ const blenderOutputType = null
 const statusType = null
 
 /**
- * @type {{initTime: number, completeTime?: number, status: typeof statusType, nodes: {[x:string]: typeof blenderOutputType}, name: string, id: string, type: 'still' | 'animation', blendFile: string, data: {startFrame: number, endFrame: number}, blender28: boolean}}
+ * @type {{initTime: number, completeTime?: number, status: typeof statusType, nodes: {[x:string]: typeof blenderOutputType}, name: string, id: string, type: 'still' | 'animation', blendFile: string, data: {startFrame: number, endFrame: number, engine: 'CYCLES' | 'BLENDER_EVEE'}, blender28: boolean}}
  */
 const jobType = null
 
