@@ -95,7 +95,8 @@ const makeExpressServer = credentials =>
 
     // BLENDER 2.8
     // optional field
-    const blender28 = BLENDER28_ENABLED && req.query.hasOwnProperty('blender28')
+    const blender28 = Boolean(BLENDER28_ENABLED && req.query.hasOwnProperty('blender28'))
+    console.log(BLENDER28_ENABLED, req.query.blender28)
 
     const id = registerNewJob(req.query.name, normalize(path), req.query.type, blender28)
     return res.json({ id })
@@ -153,7 +154,8 @@ const makeExpressServer = credentials =>
 
     // BLENDER 2.8
     // optional field
-    const blender28 = BLENDER28_ENABLED && req.query.hasOwnProperty('blender28')
+    const blender28 = Boolean(BLENDER28_ENABLED && req.body.hasOwnProperty('blender28'))
+    console.log(BLENDER28_ENABLED, req.body.blender28)
 
     // write the file
     const hash = md5Hash(req.file.buffer)
