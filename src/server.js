@@ -1,6 +1,7 @@
 const https = require('https')
 const e = require('express')
 const { jobsList, cancelJob, registerNewJob, retrieveJob, fileName, setBroadcast, deleteJob } = require('./job')
+const { BLENDER28_ENABLED } = require('./blender')
 const { err, md5Hash } =  require('./utils')
 const consts = require('./consts')
 const { normalize } = require('path')
@@ -92,7 +93,11 @@ const makeExpressServer = credentials =>
     // type is still or animation
     if (req.query.type !== 'still' && req.query.type !== 'animation') return res.status(400).json({ err: 'Bad Request. Invalid "type". Must be either "still" or "animation".' })
 
-    const id = registerNewJob(req.query.name, normalize(path), req.query.type)
+    // BLENDER 2.8
+    // optional field
+    const blender28 = BLENDER28_ENABLED && req.query.hasOwnProperty('blender28')
+
+    const id = registerNewJob(req.query.name, normalize(path), req.query.type, blender28)
     return res.json({ id })
   })
 
@@ -146,6 +151,10 @@ const makeExpressServer = credentials =>
     // file exists
     if (!req.file) return res.status(400).json({ err: 'Bad Request. Missing file "blendFile".' })
 
+    // BLENDER 2.8
+    // optional field
+    const blender28 = BLENDER28_ENABLED && req.query.hasOwnProperty('blender28')
+
     // write the file
     const hash = md5Hash(req.file.buffer)
     const path = normalize(`${consts.ROOT_DIR}/public/blendfiles/${req.body.name}_${hash}.blend`)
@@ -153,7 +162,7 @@ const makeExpressServer = credentials =>
     // it's more intense to check everytime than it is to rewrite the file once in a while
     writeFileSync(path, req.file.buffer, { encoding: 'binary' })
 
-    const id = registerNewJob(req.body.name, path, req.body.type)
+    const id = registerNewJob(req.body.name, path, req.body.type, blender28)
     return res.json({ id })
   })
 

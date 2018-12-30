@@ -9,14 +9,14 @@ const { log, err, md5Hash, tarFolder } = require('./utils')
 const moment = require('moment')
 
 /**
- * Create the devices list
+ * Create a list of devices
  *
+ * @param {number} numDevices the number of devices
  * @returns {{[x: string]: typeof deviceType}}
- * @unpure
+ * @pure
  */
-function makeDevicesList()
+function makeDevicesList(numDevices)
 {
-  const numDevices = getDevices()
   const devicesList = {}
   for (let id = 0; id < numDevices; ++id) {
     devicesList[id] = {
@@ -68,7 +68,7 @@ function fileName(job)
 /**
  * The list of devices that are avaiable for 3D Rendering
  */
-const devicesList = makeDevicesList()
+const devicesList = makeDevicesList(getDevices())
 
 /**
  * The list of jobs registered by the user
@@ -123,7 +123,7 @@ function startJobNode(job, devices)
       })
     }
 
-    const child = render(job.blendFile, { type: job.type, devices, outputFolder: outputFolder(job), fileName: fileName(job) })
+    const child = render(job.blendFile, { type: job.type, devices, outputFolder: outputFolder(job), fileName: fileName(job) }, job.blender28)
 
     // save the child to be able to cancel the render
     const pid = child.pid
@@ -203,7 +203,7 @@ async function prepareJob(job)
   log(`preparing job "${job.name}"`)
 
   job.status = 'Gathering data'
-  job.data = await getData(job.blendFile)
+  job.data = await getData(job.blendFile, job.blender28)
   job.status = 'Pending'
 
   if (job.type === 'animation') {
@@ -223,10 +223,11 @@ async function prepareJob(job)
  * @param {string} name the name of the job
  * @param {string} blendFile relative path to the blendFile in the public directory
  * @param {typeof jobType.type} type the type of job. still or animation
+ * @param {typeof jobType.blender28} blender28 should this render be done in Blender 2.8
  * @returns {string} the unique id of the job
  * @unpure
  */
-function registerNewJob(name, blendFile, type)
+function registerNewJob(name, blendFile, type, blender28)
 {
   const id = md5Hash(blendFile + Date.now())
 
@@ -242,6 +243,7 @@ function registerNewJob(name, blendFile, type)
     type,
     blendFile,
     data: { startFrame: 0, endFrame: 0 },
+    blender28,
   }
 
   jobsList[id] = job

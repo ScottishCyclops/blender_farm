@@ -3,13 +3,23 @@ import os
 import json
 import bpy
 
+is_28 = bpy.app.version[1] >= 80
+render_engine = bpy.context.scene.render.engine
+
 params = json.loads(sys.argv[sys.argv.index('--') + 1])
 
-devices = bpy.context.user_preferences.addons['cycles'].preferences.get_devices()[0]
+if render_engine == 'CYCLES':
+  preferences = bpy.context.preferences if is_28 else bpy.context.user_preferences
 
-# use only the given devices
-for i in range(len(devices)):
-  devices[i].use = (i in params['devices'])
+  # enable CUDA GPU rendering
+  preferences.addons['cycles'].preferences['compute_device_type'] = 1
+  bpy.context.scene.cycles.device = 'GPU'
+
+  # use only the given devices
+  devices = preferences.addons['cycles'].preferences.get_devices()[0]
+
+  for i in range(len(devices)):
+    devices[i].use = (i in params['devices'])
 
 is_animation = bool(params['type'] == 'animation')
 
@@ -17,20 +27,20 @@ file_path = os.path.join(params['outputFolder'], params['fileName'])
 if is_animation:
     file_path += '-'
 
-Render = bpy.context.scene.render
+render = bpy.context.scene.render
 
 '''OPTIONS'''
 # file type
-Render.image_settings.file_format = 'PNG'
+render.image_settings.file_format = 'PNG'
 # set render path
-Render.filepath = file_path
+render.filepath = file_path
 # if a frame already exists, don't re-render it
-Render.use_overwrite = False
+render.use_overwrite = False
 # if you started rendering a frame, make an empty file for it so that other nodes know you're taking care of it
-Render.use_placeholder = True
+render.use_placeholder = True
 if is_animation:
   # keep render data around for faster re-render
-  Render.use_persistent_data = True
+  render.use_persistent_data = True
 
 '''RENDER'''
 # render and write ouput to render path automatically

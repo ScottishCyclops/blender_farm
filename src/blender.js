@@ -2,16 +2,23 @@ const { existsSync } = require('fs')
 const { spawn, spawnSync } = require('child_process')
 
 const consts = require('./consts')
-const { assert, parseTimeString } = require('./utils')
+const { assert, parseTimeString, log } = require('./utils')
 const { blenderOutputType } = require('./types')
 
 /**
- * @type {{blenderExec: string}}
+ * @type {{blenderExec: string, blender28Exec?: string}}
  */
 const config = require(consts.ROOT_DIR + '/config.json')
 
 assert(config.hasOwnProperty('blenderExec'), 1, 'Invalid config file: missing "blenderExec"')
 assert(existsSync(config.blenderExec), 2, `"${config.blenderExec}" does not exist`)
+
+const BLENDER28_ENABLED = config.hasOwnProperty('blender28Exec')
+
+if (BLENDER28_ENABLED) {
+  log('Enabling Blender 2.8 Rendering')
+  assert(existsSync(config.blender28Exec), 2, `"${config.blender28Exec}" does not exist`)
+}
 
 const getDataScript = consts.ROOT_DIR + '/python/get_data.py'
 const renderScript = consts.ROOT_DIR + '/python/render.py'
@@ -60,6 +67,8 @@ function parseBlenderOutputLine(line)
  */
 function getDevices()
 {
+  // ignore the fact that we can use the CPU alonside the GPU to render in 2.8 for now
+  // TODO: handle CPU CUDA Rendering
   const child = spawnSync(config.blenderExec, [ '-b', '-P', getDevicesScript ])
 
   const lines = child.stdout.toString().split('\n')
@@ -78,14 +87,16 @@ function getDevices()
  * Get data about the blend file
  *
  * @param {string} blendFile path to the blend file to retrieve data from
+ * @param {boolean} blender28 if true, uses Blender 2.8
  * @returns {Promise<{startFrame: number, endFrame: number}>} some data about the blend file
  * @unpure
  */
-function getData(blendFile)
+function getData(blendFile, blender28)
 {
   return new Promise((resolve, reject) =>
   {
-    const child = spawn(config.blenderExec, [ '-b', blendFile, '-P', getDataScript ])
+    const exec = blender28 && BLENDER28_ENABLED ? config.blender28Exec : config.blenderExec
+    const child = spawn(exec, [ '-b', blendFile, '-P', getDataScript ])
 
     child.stdout.on('data', data =>
     {
@@ -115,13 +126,14 @@ function getData(blendFile)
  * devices: the Cycles device ids to use
  *
  * outputFolder:  path to the folder in which to write the frames
- *
+ * @param {boolean} blender28 if true, uses Blender 2.8
  * @returns {ChildProcess} the blender child process
  * @unpure
  */
-function render(blendFile, params)
+function render(blendFile, params, blender28)
 {
-  return spawn(config.blenderExec, [ '-b', blendFile, '-P', renderScript, '--', JSON.stringify(params) ])
+  const exec = blender28 && BLENDER28_ENABLED ? config.blender28Exec : config.blenderExec
+  return spawn(exec, [ '-b', blendFile, '-P', renderScript, '--', JSON.stringify(params) ])
 }
 
 module.exports = {
@@ -129,4 +141,5 @@ module.exports = {
   getDevices,
   getData,
   render,
+  BLENDER28_ENABLED
 }
