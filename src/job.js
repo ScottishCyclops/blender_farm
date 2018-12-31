@@ -130,7 +130,7 @@ function startJobNode(job, devices)
     nodesList[pid] = child
 
     /**
-     * Default data in case the node never outputs a progess (Blender 2.8 EVEE)
+     * Default data in case the node never outputs a progess (Blender 2.8 EEVEE)
      * @type {typeof blenderOutputType}
      */
     job.nodes[pid] = {
@@ -178,7 +178,7 @@ function startJobNode(job, devices)
     child.on('close', (code, signal) =>
     {
       // ignore SIGTERM, because it means the job got canceled
-      // ignore SIGABRT, because Blender 2.8 returns it when finishing an EVEE render for now
+      // ignore SIGABRT, because Blender 2.8 returns it when finishing an EEVEE render for now
       if (code !== 0 && signal !== 'SIGTERM' && signal !== 'SIGABRT') return reject(signal)
       log(`finished job node for "${job.name}"`)
       delete nodesList[pid]
@@ -186,7 +186,7 @@ function startJobNode(job, devices)
       // check if the job is finished
       // we might be done, but more frames might still be rendered by other nodes !
 
-      // manually set to finished in case node never outputs a progress (Blender 2.8 EVEE)
+      // manually set to finished in case node never outputs a progress (Blender 2.8 EEVEE)
       job.nodes[pid].information = 'Finished'
 
       // job is done if all nodes that rendered it say they are finished
@@ -229,8 +229,8 @@ async function prepareJob(job)
   job.data = await getData(job.blendFile, job.blender28)
   job.status = 'Pending'
 
-  // never render evee on multiple instances
-  if (job.type === 'animation' && job.data.engine !== 'BLENDER_EVEE') {
+  // never render EEVEE on multiple instances
+  if (job.type === 'animation' && job.data.engine !== 'BLENDER_EEVEE') {
     // queue the job on every device
     for (const device in devicesList) {
       devicesList[device].events.emit('newJob', job.id)
