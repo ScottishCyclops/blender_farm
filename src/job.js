@@ -3,7 +3,7 @@ const { EventEmitter } = require('events')
 const { existsSync, unlinkSync, removeSync } = require('fs-extra')
 
 const { getData, getDevices, render, parseBlenderOutputLine } = require('./blender')
-const { jobType, deviceType } = require('./types')
+const { jobType, deviceType, blenderOutputType } = require('./types')
 const consts = require('./consts')
 const { log, err, md5Hash, tarFolder } = require('./utils')
 const moment = require('moment')
@@ -129,6 +129,21 @@ function startJobNode(job, devices)
     const pid = child.pid
     nodesList[pid] = child
 
+    /**
+     * Default data in case the node never outputs a progess (Blender 2.8 EVEE)
+     * @type {typeof blenderOutputType}
+     */
+    job.nodes[pid] = {
+      frame: job.data.startFrame,
+      information: 'Pending',
+      memory_current: 0,
+      memory_current_peak: 0,
+      memory_global: 0,
+      render_layer: 'Unknown',
+      render_time: 0,
+      scene: 'Unknown'
+    }
+
     const onprogress = status =>
     {
       job.nodes[pid] = status
@@ -142,6 +157,10 @@ function startJobNode(job, devices)
         }
       })
     }
+
+    // show all of blender's output
+    // TODO: remove when everything is stable with 2.8
+    child.stdout.pipe(process.stdout)
 
     child.stdout.on('data', data =>
     {
@@ -166,6 +185,9 @@ function startJobNode(job, devices)
 
       // check if the job is finished
       // we might be done, but more frames might still be rendered by other nodes !
+
+      // manually set to finished in case node never outputs a progress (Blender 2.8 EVEE)
+      job.nodes[pid].information = 'Finished'
 
       // job is done if all nodes that rendered it say they are finished
       const jobIsDone = Object.values(job.nodes).every(node => node.information === 'Finished')
